@@ -108,7 +108,6 @@ void adreno_dispatcher_close(struct adreno_device *adreno_dev);
 int adreno_dispatcher_idle(struct adreno_device *adreno_dev);
 void adreno_dispatcher_irq_fault(struct adreno_device *adreno_dev);
 void adreno_dispatcher_stop(struct adreno_device *adreno_dev);
-void adreno_dispatcher_stop_fault_timer(struct kgsl_device *device);
 
 int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 		struct kgsl_context *context, struct kgsl_drawobj *drawobj[],
