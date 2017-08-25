@@ -704,12 +704,11 @@ EXPORT_SYMBOL_GPL(ufs_qcom_phy_is_pcs_ready);
 int ufs_qcom_phy_power_on(struct phy *generic_phy)
 {
 	struct ufs_qcom_phy *phy_common = get_ufs_qcom_phy(generic_phy);
-	struct device *dev = phy_common->dev;
 	int err;
 
 	err = ufs_qcom_phy_enable_vreg(generic_phy, &phy_common->vdda_phy);
 	if (err) {
-		dev_err(dev, "%s enable vdda_phy failed, err=%d\n",
+		pr_err("%s enable vdda_phy failed, err=%d\n"
 			__func__, err);
 		goto out;
 	}
@@ -726,7 +725,7 @@ int ufs_qcom_phy_power_on(struct phy *generic_phy)
 
 	err = ufs_qcom_phy_enable_ref_clk(generic_phy);
 	if (err) {
-		dev_err(dev, "%s enable phy ref clock failed, err=%d\n",
+		pr_err("%s enable phy ref clock failed, err=%d\n",
 			__func__, err);
 		goto out_disable_pll;
 	}
@@ -736,7 +735,7 @@ int ufs_qcom_phy_power_on(struct phy *generic_phy)
 		err = ufs_qcom_phy_enable_vreg(generic_phy,
 					       &phy_common->vddp_ref_clk);
 		if (err) {
-			dev_err(dev, "%s enable vddp_ref_clk failed, err=%d\n",
+			pr_err("%s enable vddp_ref_clk failed, err=%d\n",
 				__func__, err);
 			goto out_disable_ref_clk;
 		}
