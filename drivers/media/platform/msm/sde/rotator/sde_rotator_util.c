@@ -769,19 +769,13 @@ static int sde_mdp_get_img(struct sde_fb_data *img,
 	data->flags |= img->flags;
 	data->offset = img->offset;
 
-	if ((data->flags & SDE_SECURE_CAMERA_SESSION) &&
-			IS_ERR_OR_NULL(img->handle)) {
-		SDEROT_ERR("error on ion_import_fb\n");
-		ret = PTR_ERR(img->handle);
-		img->handle = NULL;
-		return ret;
-	} else if (data->flags & SDE_ROT_EXT_DMA_BUF) {
-		data->srcp_dma_buf = img->buffer;
-	} else if (IS_ERR(data->srcp_dma_buf)) {
-		SDEROT_ERR("error on dma_buf\n");
-		ret = PTR_ERR(data->srcp_dma_buf);
-		data->srcp_dma_buf = NULL;
-		return ret;
+	if (data->flags & SDE_ROT_EXT_DMA_BUF)
+ 		data->srcp_dma_buf = img->buffer;
+	else if (IS_ERR(data->srcp_dma_buf)) {
+		SDEROT_ERR("error on ion_import_fd\n");
+ 		ret = PTR_ERR(data->srcp_dma_buf);
+ 		data->srcp_dma_buf = NULL;
+ 		return ret;
 	}
 
 	if (sde_mdp_is_map_needed(data)) {
@@ -854,6 +848,9 @@ static int sde_mdp_get_img(struct sde_fb_data *img,
 
 		return ret;
 	}
+
+	if (!IS_ERR_OR_NULL(ihandle))
+		ion_free(iclient, ihandle);
 
 	return 0;
 err_detach:
