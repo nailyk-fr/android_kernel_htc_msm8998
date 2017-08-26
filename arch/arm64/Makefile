@@ -88,9 +88,9 @@ suffix_$(CONFIG_KERNEL_LZ4)  = lz4
 
 # Default target when executing plain make
 ifeq ($(CONFIG_BUILD_ARM64_APPENDED_DTB_IMAGE),y)
-KBUILD_IMAGE	:= Image.gz-dtb
+KBUILD_IMAGE   := Image.$(suffix_y)-dtb
 else
-KBUILD_IMAGE	:= Image.gz
+KBUILD_IMAGE   := Image.$(suffix_y)
 endif
 
 KBUILD_DTBS	:= dtbs
@@ -120,7 +120,7 @@ dtbs_install:
 	$(Q)$(MAKE) $(dtbinst)=$(boot)/dts
 
 Image-dtb Image.gz-dtb Image.lz4-dtb: vmlinux scripts dtbs
- 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
 PHONY += vdso_install
 vdso_install:

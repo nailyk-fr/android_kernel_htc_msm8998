@@ -714,6 +714,8 @@ static struct attribute * g[] = {
 #ifdef CONFIG_HTC_PNPMGR
 	&powersave_attr.attr,
 #endif
+	&thermal_monitor_attr.attr,
+	&ktop_accu_attr.attr,
 	NULL,
 };
 
