@@ -27,7 +27,6 @@
 #include <linux/msm-bus.h>
 #include <linux/file.h>
 #include <linux/dma-direction.h>
-#include <soc/qcom/cx_ipeak.h>
 
 #include "mdss_panel.h"
 

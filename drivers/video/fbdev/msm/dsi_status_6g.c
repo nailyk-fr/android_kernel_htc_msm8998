@@ -53,6 +53,54 @@ static bool mdss_check_te_status(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 
 	return ret;
 }
+/*
+ * Return true if TE checking is fine, next workqueue is scheduled as well.
+ */
+static bool mdss_check_te_status_v2(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
+		struct dsi_status_data *pstatus_data, uint32_t interval)
+{
+	bool ret;
+	struct te_data *te = &(pstatus_data->te);
+	static int no_te = 0;
+
+	ret = !atomic_read(&ctrl_pdata->te_irq_ready);
+	if (ret) {
+		pr_info("%s: TE IRQ line not enabled yet\n", __func__);
+		msleep(50);
+		ret = atomic_read(&ctrl_pdata->te_irq_ready);
+	} else {
+		if (te->count < 2)
+			msleep(100);
+		pr_info("%s: te_count=%d\n", __func__, te->count);
+		ret = te->count >=2 ? true : false;
+	}
+	if (ret) {
+		schedule_delayed_work(&pstatus_data->check_status,
+			msecs_to_jiffies(interval));
+	}
+
+	if(ret == false && no_te == 0) {
+		if(strcmp(htc_get_bootmode(), "ftm") == 0){
+			struct dentry *dent = debugfs_create_dir("htc_debug", NULL);
+			no_te = 1;
+			if (IS_ERR(dent)) {
+				pr_err(KERN_ERR "%s(%d): debugfs_create_dir fail, error %ld\n",
+					__FILE__, __LINE__, PTR_ERR(dent));
+				no_te = 0;
+			}
+			else if (debugfs_create_u32("no_te", 0644, dent, &no_te) == NULL) {
+				pr_err(KERN_ERR "%s(%d): debugfs_create_u32 fail\n",
+					__FILE__, __LINE__);
+				no_te = 0;
+			}
+			else {
+				pr_info("create no_te node for ftm mode");
+			}
+		}
+	}
+
+	return ret;
+}
 
 /*
  * Return true if TE checking is fine, next workqueue is scheduled as well.

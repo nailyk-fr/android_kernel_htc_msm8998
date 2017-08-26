@@ -1016,6 +1016,12 @@ void mdss_dp_config_ctrl(struct mdss_dp_drv_pdata *dp)
 	mdss_dp_configuration_ctrl(&dp->ctrl_io, data);
 }
 
+static inline void mdss_dp_ack_state(struct mdss_dp_drv_pdata *dp, int val)
+{
+	if (dp && dp->ext_audio_data.intf_ops.notify)
+		dp->ext_audio_data.intf_ops.notify(dp->ext_pdev, val);
+}
+
 static int mdss_dp_wait4video_ready(struct mdss_dp_drv_pdata *dp_drv)
 {
 	int ret = 0;
@@ -2037,6 +2043,7 @@ static int mdss_dp_notify_clients(struct mdss_dp_drv_pdata *dp,
 	bool notify = false;
 	bool connect;
 
+	mutex_lock(&dp->pd_msg_mutex);
 	pr_debug("beginning notification\n");
 	if (status == dp->hpd_notification_status) {
 		pr_debug("No change in status %s --> %s\n",
@@ -2128,6 +2135,7 @@ notify:
 
 end:
 	dp->hpd_notification_status = status;
+	mutex_unlock(&dp->pd_msg_mutex);
 	return ret;
 }
 
@@ -3426,6 +3434,7 @@ static void mdss_dp_event_cleanup(struct mdss_dp_drv_pdata *dp)
 static int mdss_dp_event_setup(struct mdss_dp_drv_pdata *dp)
 {
 
+
 	init_waitqueue_head(&dp->dp_event.event_q);
 	spin_lock_init(&dp->dp_event.event_lock);
 
@@ -3480,7 +3489,6 @@ static void usbpd_connect_callback(struct usbpd_svid_handler *hdlr)
 	}
 
 	mdss_dp_update_cable_status(dp_drv, true);
-	kthread_unpark(dp_drv->ev_thread);
 
 	if (dp_drv->ev_thread)
 		kthread_unpark(dp_drv->ev_thread);
@@ -3958,6 +3966,11 @@ static int mdss_dp_process_hpd_irq_high(struct mdss_dp_drv_pdata *dp)
 	if (!ret)
 		goto exit;
 
+	if (mdss_dp_is_ds_bridge_sink_count_zero(dp)) {
+		pr_debug("sink count is zero, nothing to do\n");
+		goto exit;
+	}
+
 	ret = mdss_dp_process_link_training_request(dp);
 	if (!ret)
 		goto exit;
@@ -4060,6 +4073,12 @@ static void mdss_dp_process_attention(struct mdss_dp_drv_pdata *dp_drv)
 {
 	if (dp_drv->alt_mode.dp_status.hpd_irq) {
 		pr_debug("Attention: hpd_irq high\n");
+
+		if(!dp_drv->dp_initialized){
+
+			pr_err("return due to DP already de-initialized\n");
+			return;
+		}
 
 		if (dp_is_hdcp_enabled(dp_drv) && dp_drv->hdcp.ops->cp_irq) {
 			if (!dp_drv->hdcp.ops->cp_irq(dp_drv->hdcp.data))
@@ -4178,7 +4197,6 @@ static void mdss_dp_handle_attention(struct mdss_dp_drv_pdata *dp)
 		}
 		pr_debug("done processing item %d in the list\n", i);
 	};
-
 exit:
 	pr_debug("exit\n");
 }

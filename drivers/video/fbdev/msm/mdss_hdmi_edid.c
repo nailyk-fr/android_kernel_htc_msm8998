@@ -1315,6 +1315,7 @@ static void hdmi_edid_extract_sink_caps(struct hdmi_edid_ctrl *edid_ctrl,
 		edid_ctrl->basic_audio_supp = false;
 	pr_debug("%s: basic audio supported: %s\n", __func__,
 		edid_ctrl->basic_audio_supp ? "true" : "false");
+
 	vsd = hdmi_edid_find_block(in_buf, DBC_START_OFFSET,
 		VENDOR_SPECIFIC_DATA_BLOCK, &len);
 
