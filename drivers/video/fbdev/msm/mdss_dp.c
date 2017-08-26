@@ -921,7 +921,6 @@ static int mdss_dp_parse_gpio_params(struct platform_device *pdev,
 	if (!gpio_is_valid(dp->aux_en_gpio)) {
 		pr_err("%d, Aux_en gpio not specified\n",
 					__LINE__);
-		return -EINVAL;
 	}
 
 	dp->aux_sel_gpio = of_get_named_gpio(
@@ -931,7 +930,6 @@ static int mdss_dp_parse_gpio_params(struct platform_device *pdev,
 	if (!gpio_is_valid(dp->aux_sel_gpio)) {
 		pr_err("%d, Aux_sel gpio not specified\n",
 					__LINE__);
-		return -EINVAL;
 	}
 
 	dp->usbplug_cc_gpio = of_get_named_gpio(
@@ -1016,12 +1014,6 @@ void mdss_dp_config_ctrl(struct mdss_dp_drv_pdata *dp)
 	data |= 0x03;	/* sycn clock & static Mvid */
 
 	mdss_dp_configuration_ctrl(&dp->ctrl_io, data);
-}
-
-static inline void mdss_dp_ack_state(struct mdss_dp_drv_pdata *dp, int val)
-{
-	if (dp && dp->ext_audio_data.intf_ops.notify)
-		dp->ext_audio_data.intf_ops.notify(dp->ext_pdev, val);
 }
 
 static int mdss_dp_wait4video_ready(struct mdss_dp_drv_pdata *dp_drv)
@@ -3437,12 +3429,13 @@ static int mdss_dp_event_setup(struct mdss_dp_drv_pdata *dp)
 	init_waitqueue_head(&dp->dp_event.event_q);
 	spin_lock_init(&dp->dp_event.event_lock);
 
-	dp->ev_thread = kthread_run(mdss_dp_event_thread,
+	dp->ev_thread = kthread_create(mdss_dp_event_thread,
 		(void *)&dp->dp_event, "mdss_dp_event");
 	if (IS_ERR(dp->ev_thread)) {
 		pr_err("unable to start event thread\n");
 		return PTR_ERR(dp->ev_thread);
 	}
+	kthread_park(dp->ev_thread);
 
 	dp->workq = create_workqueue("mdss_dp_hpd");
 	if (!dp->workq) {
@@ -3487,6 +3480,8 @@ static void usbpd_connect_callback(struct usbpd_svid_handler *hdlr)
 	}
 
 	mdss_dp_update_cable_status(dp_drv, true);
+	kthread_unpark(dp_drv->ev_thread);
+
 	if (dp_drv->ev_thread)
 		kthread_unpark(dp_drv->ev_thread);
 
@@ -4338,7 +4333,6 @@ static int mdss_dp_probe(struct platform_device *pdev)
 	if (ret) {
 		pr_err("pinctrl init failed, ret=%d\n",
 						ret);
-		goto probe_err;
 	}
 
 	ret = mdss_dp_parse_gpio_params(pdev, dp_drv);
@@ -4358,6 +4352,8 @@ static int mdss_dp_probe(struct platform_device *pdev)
 	dp_drv->suspend_vic = HDMI_VFRMT_UNKNOWN;
 
 	pr_debug("done\n");
+
+	dp_send_events(dp_drv, EV_USBPD_DISCOVER_MODES);
 
 	return 0;
 

@@ -211,15 +211,6 @@ enum mdss_mdp_pipe_type {
 	MDSS_MDP_PIPE_TYPE_MAX,
 };
 
-enum mdss_mdp_intf_index {
-	MDSS_MDP_NO_INTF,
-	MDSS_MDP_INTF0,
-	MDSS_MDP_INTF1,
-	MDSS_MDP_INTF2,
-	MDSS_MDP_INTF3,
-	MDSS_MDP_MAX_INTF
-};
-
 struct reg_bus_client {
 	char name[MAX_CLIENT_NAME_LEN];
 	short usecase_ndx;
@@ -546,7 +537,6 @@ struct mdss_data_type {
 	u32 sec_cam_en;
 	u32 sec_session_cnt;
 	wait_queue_head_t secure_waitq;
-	struct cx_ipeak_client *mdss_cx_ipeak;
 	struct mult_factor bus_throughput_factor;
 };
 
